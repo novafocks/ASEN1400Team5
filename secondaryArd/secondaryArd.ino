@@ -2,18 +2,10 @@
 SoftwareSerial PrimaryArd(0, 1);
 #include <Servo.h>
 
-// define stepper pins
-//#define STEPPER_PIN_1 9
-//#define STEPPER_PIN_2 10
-//#define STEPPER_PIN_3 11
-//#define STEPPER_PIN_4 12
-
-const int INIT_ALT = 1665; // in meters
+Servo doorServo;
+Servo armServo;
 
 const int baudRate = 9600; // number must Serial.Begin() of Primary Arduino
-
-int pos = 0;
-int step_number = 0;
 
 const int arrSize = 50;
 char inputLine[arrSize];
@@ -29,21 +21,22 @@ float accelX(0);
 float accelZ(0);
 
 double altitude;
-int firstTimeAboveAlt;
+int timeAtAlt = -1;
+int timeEncounteredAccel = -1;
+bool needToExtend = false;
 
 void setup() {
   Serial.begin(baudRate);
   PrimaryArd.begin(baudRate); // delclare a Serial port for Primary Arduino
-  
-//  pinMode(STEPPER_PIN_1, OUTPUT);
-//  pinMode(STEPPER_PIN_2, OUTPUT);
-//  pinMode(STEPPER_PIN_3, OUTPUT);
-//  pinMode(STEPPER_PIN_4, OUTPUT);
+
+  doorServo.attach(A5);
+  armServo.attach(A4);
 
 }
 
 void loop() {   // put main code here, to run repeatedly:
-  //  Serial.println(millis());
+  //  Serial.println(millis()); // print time, for testing
+  
   // checking for output sent from PrimaryArd
   while (PrimaryArd.available() > 0 && stringComplete == false) {
     inputLine[i] = PrimaryArd.read();
@@ -82,9 +75,10 @@ void loop() {   // put main code here, to run repeatedly:
   if (stringComplete == true) {
     //    Serial.println("printing complete string."); // testing print statement // time, int temp, ext temp, humidity, press, accelX, accelZ (order of read values)
 
-    //    for (int j=0; j <= i; j++) { //   this loop prints the input exactly as it is read from PrimaryArd
+    //    for (int j=0; j <= i; j++) { //  this loop prints the input exactly as it is read from PrimaryArd
     //      Serial.print(inputLine[j]);
     //    }
+    
     i = 0;
     millisTime = getValFromCharArr(inputLine, i, ',');
     intTemp = getValFromCharArr(inputLine, i, ',');
@@ -124,29 +118,32 @@ void loop() {   // put main code here, to run repeatedly:
     i = 0;
   }
 
+  // calculate altitude in feet (https://www.weather.gov/media/epz/wxcalc/pressureAltitude.pdf)
+  altitude = 0 + (15+273.15)/(-0.0065)*((pressure/14.7)^(-8.31432*-0.0065/9.80665/0.0289644)-1); 
 
-  altitude = 0 + (15+273.15)/(-0.0065)*((pressure/14.7)^(-8.31432*-0.0065/9.80665/0.0289644)-1); // calculated in ft
+  if ((altitude >= 15000 && altitude <= 85000) && timeAtAlt > 0) {
+    if ((timeAtAlt - millis()) >= 30000) { // 
+      needToExtend = true;
+    }
+  } else if (altitude >= 15000 && altitude <= 85000) {
+    timeAtAlt = millis(); // sets the first time within correct altitude range to extend
+  } else {
+    needToExtend = false;
+    timeAtAlt = -1;
+    
+  }
 
-  if (altitude >= 85000 && firstTimeAboveAlt > 0) {
-    if (firstTimeAboveAlt
-  } else if (altitude >=
+  if (fabs(accelZ) >= 3.0 || fabs(accelX) >= 3.0) {
+    timeEncounteredAccel = millis();
+  } else if (timeEncounteredAccel != -1 && (timeEncounteredAccel - millis()) >= 10000) { // checking whether encountered acceleration in last 10 seconds
+    timeEncounteredAccel = -1;
+  } else {} // still within 10 seconds from large acceleration, do not update
 
-  if (fabs(accelZ) >= 3.0 || fabs(accelX) >= 3.0 || altitude >= ) {
-    //    for (int i = 0; i < 2048/4; i++) {
-    //      Serial.println("activating stepper");
-    //      OneStep(true);
-    //      pos++;
-    //      delay(2);
-    //    }
+  if (timeEncounteredAccel != -1 || needToExtend == false) { // checks that either accel has been encountered or we are outside altitude range for extending
+    // retract the arm, then close the door
 
-
-  } else if (pos > 0) {
-    //    for (int i = 0; i < 2048/4; i++) {
-    //      OneStep(false);
-    //      pos--;
-    //      delay(2);
-    //    }
-
+  } else {
+    // open the door (or keep it open), then extend the arm, or keep it extended 
 
   }
 
@@ -164,65 +161,3 @@ float getValFromCharArr (char arr[], int &idx, char delimiter) {
   //  Serial.println(tempStr);
   return tempStr.toFloat();
 }
-
-//void OneStep(bool dir) {
-//  if (dir) {
-//    switch(step_number) {
-//      case 0:
-//        digitalWrite(STEPPER_PIN_1, HIGH);
-//        digitalWrite(STEPPER_PIN_2, LOW);
-//        digitalWrite(STEPPER_PIN_3, LOW);
-//        digitalWrite(STEPPER_PIN_4, LOW);
-//        break;
-//      case 1:
-//        digitalWrite(STEPPER_PIN_1, LOW);
-//        digitalWrite(STEPPER_PIN_2, HIGH);
-//        digitalWrite(STEPPER_PIN_3, LOW);
-//        digitalWrite(STEPPER_PIN_4, LOW);
-//        break;
-//      case 2:
-//        digitalWrite(STEPPER_PIN_1, LOW);
-//        digitalWrite(STEPPER_PIN_2, LOW);
-//        digitalWrite(STEPPER_PIN_3, HIGH);
-//        digitalWrite(STEPPER_PIN_4, LOW);
-//        break;
-//      case 3:
-//        digitalWrite(STEPPER_PIN_1, LOW);
-//        digitalWrite(STEPPER_PIN_2, LOW);
-//        digitalWrite(STEPPER_PIN_3, LOW);
-//        digitalWrite(STEPPER_PIN_4, HIGH);
-//        break;
-//    }
-//  } else {
-//      switch(step_number) {
-//      case 0:
-//        digitalWrite(STEPPER_PIN_1, LOW);
-//        digitalWrite(STEPPER_PIN_2, LOW);
-//        digitalWrite(STEPPER_PIN_3, LOW);
-//        digitalWrite(STEPPER_PIN_4, HIGH);
-//        break;
-//      case 1:
-//        digitalWrite(STEPPER_PIN_1, LOW);
-//        digitalWrite(STEPPER_PIN_2, LOW);
-//        digitalWrite(STEPPER_PIN_3, HIGH);
-//        digitalWrite(STEPPER_PIN_4, LOW);
-//        break;
-//      case 2:
-//        digitalWrite(STEPPER_PIN_1, LOW);
-//        digitalWrite(STEPPER_PIN_2, HIGH);
-//        digitalWrite(STEPPER_PIN_3, LOW);
-//        digitalWrite(STEPPER_PIN_4, LOW);
-//        break;
-//      case 3:
-//        digitalWrite(STEPPER_PIN_1, HIGH);
-//        digitalWrite(STEPPER_PIN_2, LOW);
-//        digitalWrite(STEPPER_PIN_3, LOW);
-//        digitalWrite(STEPPER_PIN_4, LOW);
-//        break;
-//    }
-//  }
-//  step_number++;
-//  if (step_number > 3) {
-//    step_number = 0;
-//  }
-//}
