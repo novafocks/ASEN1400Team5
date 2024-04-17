@@ -96,13 +96,13 @@ void loop() {
   // START SERIAL AND SENSOR STUFF
   
   // Turn script running leds OFF at begining of loop
-  digitalWrite(4, LOW);
-  digitalWrite(5, LOW);
-  digitalWrite(6, LOW);
-  digitalWrite(7, LOW);
-  digitalWrite(9, LOW);
+  // digitalWrite(4, LOW); // blue whip led (data)
+  digitalWrite(5, LOW); // green shield led (UNUSED)
+  // digitalWrite(6, LOW); // blue shield led (data)
+  // digitalWrite(7, LOW); // red shield led (heater on)
+  // digitalWrite(9, LOW); // yellow shield led (camera on)
 
-  // delay(100); // idk what this delay is for
+  // delay(100); // I think this delay is so that leds blink in original code, but not using this
 
   // Log the time
   timeStamp = millis();
@@ -162,9 +162,11 @@ void loop() {
 
   if (!blueLedOn) {
     digitalWrite(4,HIGH);
+    digitalWrite(6, HIGH);
     blueLedOn = true;
   } else {
     digitalWrite(4,LOW);
+    digitalWrite(6,LOW);
     blueLedOn = false;
   }
   
@@ -177,8 +179,10 @@ void loop() {
   // CONDITIONS FOR TURNING ON HEATING PAD
   if (temp1C <= 5.0 || temp2C <= -40.0) {
     digitalWrite(heaterPin,HIGH);
+    digitalWrite(7, HIGH); // red led
   } else {
     digitalWrite(heaterPin,LOW);
+    digitalWrite(7, LOW); // red led
   }
   
 //  // CONDITIONS FOR OPENING DOOR, POWERING CAMERA, AND EXTENDING ARM /////////////////////////////////////////////////////
@@ -189,8 +193,10 @@ void loop() {
 //  if (altitude <= 15000) {
 //    if (altitude <= 14000) { // keep the camera off below 14000 feet
 //      digitalWrite(cameraPin,LOW);
+//      digitalWrite(9, LOW); // yellow led
 //    } else { // turn the camera on a little before the door will open
 //      digitalWrite(cameraPin,HIGH);
+//      digitalWrite(9, HIGH); // yellow led
 //    }
 //    if (armPos > 0) {
 //      doorServo.write(165);
@@ -200,14 +206,15 @@ void loop() {
 //      doorServo.write(85);
 //      armServo.writeMicroseconds(1500);
 //    }
-//  } // end condition altitude <= 15000
+//  } // end condition altitude <= 15000 //////////////////////////////////////////
 //  
 //  else if (altitude <= 80000) { // open the door and start extending the arm
 //    digitalWrite(cameraPin,HIGH);
+//    digitalWrite(9, HIGH); // yellow led
 //    doorServo.write(165);
 //    
 //    if (altitude >= 16000 && (millis() - timeOfLastAccel) >= 120000) { // extend arm above 16000 feet, retract it below
-//      if (armPos >= 6000)   { // keep arm stationary (extended)
+//      if (armPos >= 600)   { // keep arm stationary (extended)
 //        armServo.writeMicroseconds(1500);
 //      } else { // extend the arm
 //        armServo.writeMicroseconds(2300);
@@ -221,7 +228,7 @@ void loop() {
 //        armServo.writeMicroseconds(1500);
 //      }
 //    }
-//  } // end altitude <= 80000
+//  } // end altitude <= 80000 ////////////////////////////////////////////////////
 //
 //  else { // altitude will be greater than 80000 feet
 //    
@@ -230,23 +237,27 @@ void loop() {
 //      armServo.writeMicroseconds(700);
 //      armPos--;
 //      digitalWrite(cameraPin,HIGH);
+//      digitalWrite(9, HIGH); // yellow led
 //    } else { // arm is retracted, close the door, keep arm in place, turn off camera
 //      doorServo.write(85);
 //      armServo.write(1500);
 //      digitalWrite(cameraPin,LOW);
+//      digitalWrite(9, LOW); // yellow led
 //    }
-//  } // end altitude > 80000 feet
+//  } // end altitude > 80000 feet /////////////////////////////////////////////////////////////////////////////////////////
 
-  // TEST CONDITIONS FOR OPENING DOOR, POWERING CAMERA, AND EXTENDING ARM /////////////////////////////////////////////////
-  if (accelZ <= 0) {
+  // TEST CONDITIONS FOR OPENING DOOR, POWERING CAMERA, AND EXTENDING ARM //////////////////////////////////////////////////
+  if (accelZ <= 0) { // test equivalent of excessive acceleration is turning arduino upside down
     timeOfLastAccel = millis();
   }
   
   if (temp2C <= 21.0) {
     if (temp2C <= 20.0) { // keep the camera off below 14000 feet
       digitalWrite(cameraPin,LOW);
+      digitalWrite(9, LOW); // yellow led
     } else { // turn the camera on a little before the door will open
-      digitalWrite(cameraPin,HIGH);
+      digitalWrite(cameraPin,HIGH); 
+      digitalWrite(9, HIGH); // yellow led
     }
     if (armPos > 0) {
       doorServo.write(165);
@@ -260,6 +271,7 @@ void loop() {
   
   else if (temp2C <= 25.0) { // open the door and start extending the arm
     digitalWrite(cameraPin,HIGH);
+    digitalWrite(9, HIGH); // yellow led
     doorServo.write(165);
     
     if (temp2C >= 22.0 && (millis() - timeOfLastAccel) >= 10000) { // extend arm above 16000 feet, retract it below
@@ -286,27 +298,26 @@ void loop() {
       armServo.writeMicroseconds(700);
       armPos--;
       digitalWrite(cameraPin,HIGH);
+      digitalWrite(9, HIGH); // yellow led
     } else { // arm is retracted, close the door, keep arm in place, turn off camera
       doorServo.write(85);
       armServo.write(1500);
       digitalWrite(cameraPin,LOW);
+      digitalWrite(9, LOW); // yellow led
     }
   } // end altitude > 80000 feet  
 
 
-  // TIME BASED CONTROL OF SERVOS, USE FOR TESTING PURPOSES, COMMENT OUT FOR FINAL UPLOAD
+//  // TIME BASED CONTROL OF SERVOS, USE FOR TESTING PURPOSES, DO NOT INCLUDE FOR FINAL UPLOAD
 //  if (timeStamp <= 5000) {
-//    digitalWrite(5, HIGH);
 //    doorServo.write(85);    
 //    armServo.writeMicroseconds(1500);
-//  } else if (timeStamp > 5000 && timeStamp <= 10000) {
-//    digitalWrite(6, HIGH);
+//  } else if (timeStamp <= 10000) {
 //    doorServo.write(165);
 //    armServo.writeMicroseconds(2300);
-//  } else if (timeStamp > 10000) {
-//    digitalWrite(7, HIGH);
+//  } else { // after 10 seconds
 //    doorServo.write(85);
-//    armServo.writeMicroseconds(800);
+//    armServo.writeMicroseconds(1500);
 //  }
 
   delay(100);
