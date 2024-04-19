@@ -92,7 +92,7 @@ void setup() {
   armServo.attach(10);
 
   // Print Column Headers
-  // Serial.write("Time,Temp1F,Temp2F,RH,Pres,AccX,AccZ,alt\n"); // commented to leave out the header
+  // Serial.write("Time,Temp1C,Temp2C,RH,Pres,AccX,AccZ,alt\n"); // commented to leave out the header
 }
 
 void loop() {
@@ -208,98 +208,12 @@ void loop() {
   } //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   
-//  // CONDITIONS FOR OPENING DOOR, POWERING CAMERA, AND EXTENDING ARM /////////////////////////////////////////////////////
-//  if (fabs(accelXG) >= 3.0 || fabs(accelZG) >= 3.0 || fabs(prevPrevAccelZG-accelZG) >= 0.75 || fabs(prevAccelZG-accel) >= 0.75) {
-//    timeOfLastAccel = millis();
-//  }
-//
-//  if (altitude >= 15000 || onAscent == false) { // camera on above 15000 feet on ascent, on for entire descent
-//    digitalWrite(cameraPin,HIGH);
-//    digitalWrite(9,HIGH); // yellow led
-//  } else {
-//    digitalWrite(cameraPin,LOW);
-//    digitalWrite(9,LOW); // yellow led
-//  }
-//  
-//  if (altitude <= 15000) {
-//    // if (altitude <= 13000) { // keep the camera off below 13000 feet
-//    //   digitalWrite(cameraPin,LOW);
-//    //   digitalWrite(9, LOW); // yellow led
-//    // } else { // turn the camera on a little before the door will open
-//    //   digitalWrite(cameraPin,HIGH);
-//    //   digitalWrite(9, HIGH); // yellow led
-//    // }
-//    if (armPos > 0) { // retract the arm
-//      // doorServo.write(165);
-//      armServo.writeMicroseconds(700); 
-//      armPos--;
-//    } else { // keep the arm stationary (retracted)
-//      // doorServo.write(85);
-//      armServo.writeMicroseconds(1500);
-//    }
-//  } // end condition altitude <= 15000 //////////////////////////////////////////
-//  
-//  else if (altitude <= 80000) { // open the door and start extending the arm
-//    // digitalWrite(cameraPin,HIGH);
-//    // digitalWrite(9, HIGH); // yellow led
-//    // doorServo.write(165);
-//    if (altitude >= 30000 && onAscent == false) {
-//      if (armPos > 0) {
-//        armServo.writeMicroseconds(700);
-//        pos--;
-//      } else {
-//        armServo.writeMicroseconds(1500);
-//      }
-//    } else {
-//      if ((millis() - timeOfLastAccel) >= 30000) { // extend arm if no bad accel
-//        if (armPos >= 750)   { // keep arm stationary (extended)
-//          armServo.writeMicroseconds(1500);
-//        } else { // extend the arm
-//          armServo.writeMicroseconds(2300);
-//          armPos++;
-//        }
-//      } else {
-//        if (armPos > 0) { // retract arm
-//          armServo.writeMicroseconds(700);
-//          armPos--;
-//        } else { // keep arm stationary (retracted)
-//          armServo.writeMicroseconds(1500);
-//        }
-//      }
-//    }
-//  } // end altitude <= 80000 ////////////////////////////////////////////////////
-//
-//  else { // altitude will be greater than 80000 feet
-//    
-//    if (armPos > 0) { // arm is extended, retract the arm, keep door open
-//      // doorServo.write(165);
-//      armServo.writeMicroseconds(700);
-//      armPos--;
-//      // digitalWrite(cameraPin,HIGH);
-//      // digitalWrite(9, HIGH); // yellow led
-//    } else { // arm is retracted, close the door, keep arm in place, turn off camera
-//      // doorServo.write(85);
-//      armServo.write(1500);
-//      // digitalWrite(cameraPin,LOW);
-//      // digitalWrite(9, LOW); // yellow led
-//    }
-//  } // end altitude > 80000 feet /////////////////////////////////////////////////////////////////////////////////////////
-
-
-  // TEST CONDITIONS FOR OPENING DOOR, POWERING CAMERA, AND EXTENDING ARM ////////////////////////////////////////////////
+  // CONDITIONS FOR OPENING DOOR, POWERING CAMERA, AND EXTENDING ARM /////////////////////////////////////////////////////
   if (fabs(accelXG) >= 3.0 || fabs(accelZG) >= 3.0 || fabs(prevPrevAccelZG-accelZG) >= 0.75 || fabs(prevAccelZG-accelZG) >= 0.75) {
     timeOfLastAccel = millis();
   }
-
-//  if (timeStamp >= 60000 /*|| onAscent == false*/) {
-//    digitalWrite(cameraPin,HIGH);
-//    digitalWrite(9,HIGH); // yellow led
-//  } else {
-//    digitalWrite(cameraPin,LOW);
-//    digitalWrite(9,LOW); // yellow led
-//  }
   
-  if (timeStamp <= 60000) {
+  if (altitude <= 15000) {
     if (armPos > 0) { // retract the arm
       doorServo.write(165);
       digitalWrite(cameraPin,HIGH);
@@ -314,79 +228,96 @@ void loop() {
     }
   } // end condition altitude <= 15000 //////////////////////////////////////////
   
-  else if (timeStamp <= 240000) { // open the door and start extending the arm
-    digitalWrite(cameraPin,HIGH);
-    digitalWrite(9,HIGH); // yellow led
-    doorServo.write(165);
-    if (timeStamp <= 120000 /*&& onAscent == false*/) {
-      if (armPos > 0) {
+  else if ((altitude > 15000) && (altitude <= 30000)) {
+    if ((millis() - timeOfLastAccel) >= 15000) {
+      if (armPos < 750) {
+        doorServo.write(165);
         digitalWrite(cameraPin,HIGH);
         digitalWrite(9,HIGH); // yellow led
-        doorServo.write(165);
-        armServo.writeMicroseconds(700);
-        armPos--;
+        armServo.writeMicroseconds(2300);
+        armPos++;
       } else {
-        digitalWrite(cameraPin,LOW);
-        digitalWrite(9,LOW); // yellow led
-        doorServo.write(85);
+        doorServo.write(165);
+        digitalWrite(cameraPin,HIGH);
+        digitalWrite(9,HIGH); // yellow led
         armServo.writeMicroseconds(1500);
       }
     } else {
-      if ((millis() - timeOfLastAccel) >= 15000) { // extend arm if no bad accel
+      if (armPos > 0) {
+        doorServo.write(165); // door open
+        digitalWrite(cameraPin,HIGH); 
+        digitalWrite(9,HIGH); // yellow led
+        armServo.writeMicroseconds(700); // retract arm
+        armPos--;
+      } else {
+        doorServo.write(85); // door closed
+        digitalWrite(cameraPin,LOW);
+        digitalWrite(9,LOW); // yellow led
+        armServo.writeMicroseconds(1500); // keep arm stationary (retracted)
+      }
+    }
+  } // END ALTITUDE > 15000 AND <= 30000 //////////////////////////////////////////
+
+  else if (onAscent == true && altitude > 30000 && altitude <= 80000) {
+    if ((millis() - timeOfLastAccel) >= 15000) {
+      if (armPos < 750) {
+        doorServo.write(165);
         digitalWrite(cameraPin,HIGH);
         digitalWrite(9,HIGH); // yellow led
-        doorServo.write(165);
-        if (armPos >= 750)   { // keep arm stationary (extended)
-          armServo.writeMicroseconds(1500);
-        } else { // extend the arm
-          armServo.writeMicroseconds(2300);
-          armPos++;
-        }
+        armServo.writeMicroseconds(2300);
+        armPos++;
       } else {
-        if (armPos > 0) { // retract arm
-          digitalWrite(cameraPin,HIGH);
-          digitalWrite(9,HIGH); // yellow led
-          doorServo.write(165);
-          armServo.writeMicroseconds(700);
-          armPos--;
-        } else { // keep arm stationary (retracted)
-          digitalWrite(cameraPin,LOW);
-          digitalWrite(9,LOW); // yellow led
-          doorServo.write(85);
-          armServo.writeMicroseconds(1500);
-        }
+        doorServo.write(165);
+        digitalWrite(cameraPin,HIGH);
+        digitalWrite(9,HIGH); // yellow led
+        armServo.writeMicroseconds(1500);
       }
+    } else {
+      if (armPos > 0) {
+        doorServo.write(165); // door open
+        digitalWrite(cameraPin,HIGH); 
+        digitalWrite(9,HIGH); // yellow led
+        armServo.writeMicroseconds(700); // retract arm
+        armPos--;
+      } else {
+        doorServo.write(85); // door closed
+        digitalWrite(cameraPin,LOW);
+        digitalWrite(9,LOW); // yellow led
+        armServo.writeMicroseconds(1500); // keep arm stationary (retracted)
+      }
+    }
+  } // END ALTITUDE > 30000 AND <= 80000 (ON ASCENT) //////////////////////////////////
+
+  else if (onAscent == false && altitude > 30000 && altitude <= 80000) {
+    if (armPos > 0) {
+      doorServo.write(165); // door open
+      digitalWrite(cameraPin,HIGH); 
+      digitalWrite(9,HIGH); // yellow led
+      armServo.writeMicroseconds(700); // retract arm
+      armPos--;
+    } else {
+      doorServo.write(85); // door closed
+      digitalWrite(cameraPin,LOW);
+      digitalWrite(9,LOW); // yellow led
+      armServo.writeMicroseconds(1500); // keep arm stationary (retracted)
     }
   } // end altitude <= 80000 ////////////////////////////////////////////////////
 
   else { // altitude will be greater than 80000 feet
-    
-    if (armPos > 0) { // arm is extended, retract the arm, keep door open
-      doorServo.write(165);
-      armServo.writeMicroseconds(700);
-      armPos--;
+    if (armPos > 0) { // arm is extended, so retract the arm, keep door open
+      doorServo.write(165); // open the door
       digitalWrite(cameraPin,HIGH);
       digitalWrite(9,HIGH); // yellow led
+      armServo.writeMicroseconds(700); 
+      armPos--;
     } else { // arm is retracted, close the door, keep arm in place, turn off camera
-      doorServo.write(85);
-      armServo.write(1500);
+      doorServo.write(85); // close the door
       digitalWrite(cameraPin,LOW);
       digitalWrite(9,LOW); // yellow led
+      armServo.write(1500);
     }
   } // end altitude > 80000 feet /////////////////////////////////////////////////////////////////////////////////////////
-
-
-//  // TIME BASED CONTROL OF SERVOS, USE FOR TESTING PURPOSES, DO NOT INCLUDE FOR FINAL UPLOAD
-//  if (timeStamp <= 5000) {
-//    doorServo.write(85);    
-//    armServo.writeMicroseconds(1500);
-//  } else if (timeStamp <= 10000) {
-//    doorServo.write(165);
-//    armServo.writeMicroseconds(2300);
-//  } else { // after 10 seconds
-//    doorServo.write(85);
-//    armServo.writeMicroseconds(1500);
-//  }
+  
 
   delay(100);
 }
